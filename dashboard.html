@@ -1,0 +1,868 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>صوت المعتمر - لوحة التحكم</title>
+  <link rel="icon" type="image/png" href="assets/favicon-32.png" />
+
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.rtl.min.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+  <link rel="stylesheet" href="css/style.css?v=14" />
+</head>
+<body>
+  <div class="d-flex">
+    <!-- الشريط الجانبي -->
+    <nav class="sidebar text-white" style="width: 260px; flex-shrink: 0;">
+      <div class="sidebar-brand">
+        <div class="brand-mark"><img src="assets/logo.png" alt="شعار صوت المعتمر" /></div>
+        <div class="brand-text">
+          <h6>صوت المعتمر</h6>
+          <small>لوحة التحكم الإدارية</small>
+        </div>
+      </div>
+      <hr class="sidebar-divider" />
+      <ul class="nav flex-column sidebar-nav" id="mainNav">
+        <li class="nav-item">
+          <a class="nav-link active" href="#" data-target="section-overview" data-title="النظرة العامة" data-perm="overview.view">
+            <i class="bi bi-speedometer2"></i><span>النظرة العامة</span>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="#" data-target="section-pilgrims" data-title="بيانات المعتمرين" data-perm="pilgrims.view">
+            <i class="bi bi-people-fill"></i><span>بيانات المعتمرين</span>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="#" data-target="section-evaluations" data-title="تقييمات المعتمرين" data-perm="evaluations.view">
+            <i class="bi bi-star-fill"></i><span>تقييمات المعتمرين</span>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="#" data-target="section-complaints" data-title="البلاغات والشكاوى" data-perm="complaints.view">
+            <i class="bi bi-exclamation-triangle-fill"></i><span>البلاغات والشكاوى</span>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="#" data-target="section-reports" data-title="التقارير والإحصائيات" data-perm="reports.view">
+            <i class="bi bi-bar-chart-line-fill"></i><span>التقارير والإحصائيات</span>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" id="navUsersLink" href="#" data-target="section-users" data-title="إدارة الموظفين" data-perm="admin">
+            <i class="bi bi-person-badge-fill"></i><span>إدارة الموظفين</span>
+          </a>
+        </li>
+      </ul>
+      <div class="sidebar-footer">
+        <div class="sidebar-user">
+          <div class="avatar" id="sidebarUserAvatar">-</div>
+          <div>
+            <div class="user-name" id="sidebarUserName">...</div>
+            <div class="user-role" id="sidebarUserRole">موظف لوحة التحكم</div>
+          </div>
+        </div>
+        <button class="btn-logout w-100" id="logoutBtn"><i class="bi bi-box-arrow-right"></i> تسجيل الخروج</button>
+      </div>
+    </nav>
+
+    <!-- المحتوى -->
+    <main class="flex-grow-1 p-3">
+      <header class="topbar">
+        <div>
+          <h1 class="topbar-title" id="pageTitle">النظرة العامة</h1>
+          <p class="topbar-subtitle">نظرة شاملة وفورية على أداء رحلات العمرة والبلاغات</p>
+        </div>
+        <div class="topbar-actions">
+          <!-- مؤشر اتصال بوت الواتساب - انظر js/whatsapp_status.js -->
+          <div class="wa-status wa-status-unknown" id="waStatus" role="status" aria-live="polite" title="حالة اتصال بوت الواتساب">
+            <span class="wa-status-dot"></span>
+            <i class="bi bi-whatsapp"></i>
+            <span class="wa-status-text" id="waStatusText">جارِ الفحص...</span>
+          </div>
+          <!-- جرس الإشعارات: آخر البلاغات والتقييمات التي لم يفتحها الموظف الحالي - انظر js/notifications.js -->
+          <div class="notif-bell-wrap">
+            <button type="button" class="notif-bell" id="notifBell" aria-label="الإشعارات" aria-haspopup="true" aria-expanded="false">
+              <i class="bi bi-bell-fill"></i>
+              <span class="notif-bell-badge d-none" id="notifBellBadge">0</span>
+            </button>
+            <div class="notif-panel d-none" id="notifPanel" role="dialog" aria-label="الإشعارات">
+              <div class="notif-panel-header">
+                <span class="notif-panel-title">الإشعارات</span>
+                <button type="button" class="notif-read-all" id="notifReadAllBtn">تحديد الكل كمقروء</button>
+              </div>
+              <div class="notif-list" id="notifList"></div>
+            </div>
+          </div>
+          <div class="topbar-meta">
+            <i class="bi bi-calendar3"></i>
+            <span id="topbarDate"></span>
+          </div>
+        </div>
+      </header>
+
+      <!-- 1. النظرة العامة -->
+      <section id="section-overview" class="page-section active">
+        <div id="overviewError" class="alert alert-danger d-none"></div>
+        <div class="kpi-grid">
+          <div class="kpi-card">
+            <div class="kpi-icon kpi-icon-primary"><i class="bi bi-people-fill"></i></div>
+            <div>
+              <div class="kpi-label">إجمالي المعتمرين</div>
+              <div class="kpi-value" id="kpiTotalPilgrims">-</div>
+            </div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-icon kpi-icon-success"><i class="bi bi-geo-alt-fill"></i></div>
+            <div>
+              <div class="kpi-label">المتواجدون داخل المملكة</div>
+              <div class="kpi-value" id="kpiInsideKingdom">-</div>
+            </div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-icon kpi-icon-warning"><i class="bi bi-emoji-smile-fill"></i></div>
+            <div>
+              <div class="kpi-label">متوسط نسبة الرضا</div>
+              <div class="kpi-value" id="kpiAvgSatisfaction">-</div>
+            </div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-icon kpi-icon-secondary"><i class="bi bi-chat-square-text-fill"></i></div>
+            <div>
+              <div class="kpi-label">إجمالي الشكاوى</div>
+              <div class="kpi-value" id="kpiTotalComplaints">-</div>
+            </div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-icon kpi-icon-danger"><i class="bi bi-exclamation-circle-fill"></i></div>
+            <div>
+              <div class="kpi-label">البلاغات المفتوحة</div>
+              <div class="kpi-value" id="kpiOpenComplaints">-</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="row g-3">
+          <div class="col-lg-6">
+            <div class="chart-card">
+              <div class="chart-card-header"><i class="bi bi-pie-chart-fill"></i><h6>توزيع نسب الرضا العام</h6></div>
+              <div class="chart-canvas-wrap"><canvas id="chartSatisfactionDist"></canvas></div>
+            </div>
+          </div>
+          <div class="col-lg-6">
+            <div class="chart-card">
+              <div class="chart-card-header"><i class="bi bi-bar-chart-fill"></i><h6>توزيع اللغات المستخدمة</h6></div>
+              <div class="chart-canvas-wrap"><canvas id="chartLanguageDist"></canvas></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 2. بيانات المعتمرين -->
+      <section id="section-pilgrims" class="page-section">
+        <div id="excelDropzone" class="excel-dropzone mb-4">
+          <div class="excel-dropzone-icon"><i class="bi bi-cloud-arrow-up-fill"></i></div>
+          <div class="excel-dropzone-text">اسحب وأفلت ملف الإكسل هنا، أو اضغط للاختيار</div>
+          <div class="excel-dropzone-hint">الصيغ المدعومة: .xlsx / .xls</div>
+          <input type="file" id="excelFileInput" accept=".xlsx,.xls" class="d-none" />
+        </div>
+        <div id="excelImportResult" class="mb-4"></div>
+
+        <div class="chart-card">
+          <div class="row g-2 align-items-end">
+            <div class="col-md-3">
+              <label class="form-label small mb-1">بحث</label>
+              <div class="input-group">
+                <span class="input-group-text"><i class="bi bi-search"></i></span>
+                <input type="text" id="pilgrimsSearchInput" class="form-control" placeholder="اسم، جواز، مجموعة، وكيل" />
+              </div>
+            </div>
+            <div class="col-md-2">
+              <label class="form-label small mb-1">الجنسية</label>
+              <select id="pilgrimsFilterNationality" class="form-select"><option value="">الكل</option></select>
+            </div>
+            <div class="col-md-2">
+              <label class="form-label small mb-1">اسم الوكيل</label>
+              <select id="pilgrimsFilterAgent" class="form-select"><option value="">الكل</option></select>
+            </div>
+            <div class="col-md-2">
+              <label class="form-label small mb-1">حالة المعتمر</label>
+              <select id="pilgrimsFilterStatus" class="form-select"><option value="">الكل</option></select>
+            </div>
+            <div class="col-md-2">
+              <label class="form-label small mb-1">التواجد بالمملكة</label>
+              <select id="pilgrimsFilterInsideKingdom" class="form-select">
+                <option value="">الكل</option>
+                <option value="true">داخل المملكة</option>
+                <option value="false">غادر</option>
+              </select>
+            </div>
+            <div class="col-md-1">
+              <button class="btn btn-outline-secondary w-100" id="pilgrimsResetFiltersBtn" title="إعادة تعيين"><i class="bi bi-arrow-counterclockwise"></i></button>
+            </div>
+          </div>
+        </div>
+
+        <div class="table-export-bar">
+          <button type="button" class="btn btn-outline-success btn-sm" id="pilgrimsExportBtn">
+            <i class="bi bi-file-earmark-excel-fill"></i> تصدير Excel (حسب التصفية)
+          </button>
+        </div>
+        <div class="table-responsive chart-card">
+          <table class="table table-hover table-striped table-bordered align-middle small text-nowrap text-center pilgrims-table">
+            <thead>
+              <tr class="table-group-header">
+                <th colspan="4">بيانات المعتمر</th>
+                <th colspan="3" class="group-start">الوكيل والمجموعة</th>
+                <th colspan="6" class="group-start">بيانات الرحلة</th>
+                <th colspan="4" class="group-start">الحالة</th>
+              </tr>
+              <tr>
+                <th class="sticky-col">اسم المعتمر</th>
+                <th>رقم الجواز</th>
+                <th>الجنسية</th>
+                <th class="group-end">النوع</th>
+                <th>رقم المجموعة</th>
+                <th>اسم الوكيل</th>
+                <th class="group-end">دولة الوكيل</th>
+                <th>تاريخ الدخول</th>
+                <th>رقم رحلة الوصول</th>
+                <th>تاريخ الخروج</th>
+                <th>رقم رحلة المغادرة</th>
+                <th>أيام الإقامة</th>
+                <th class="group-end">مدة البرنامج</th>
+                <th>تاريخ اصدار التأشيرة</th>
+                <th>حالة المعتمر</th>
+                <th>حالة الخروج</th>
+                <th>التواجد</th>
+              </tr>
+            </thead>
+            <tbody id="pilgrimsTableBody"></tbody>
+          </table>
+        </div>
+        <div class="d-flex justify-content-between align-items-center mt-2">
+          <span id="pilgrimsPageInfo" class="text-muted small"></span>
+          <div class="btn-group">
+            <button class="btn btn-outline-secondary btn-sm" id="pilgrimsPrevBtn">السابق</button>
+            <button class="btn btn-outline-secondary btn-sm" id="pilgrimsNextBtn">التالي</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- 2.5 تقييمات المعتمرين -->
+      <section id="section-evaluations" class="page-section">
+        <div class="chart-card">
+          <div class="row g-2 align-items-end">
+            <div class="col-md-3">
+              <label class="form-label small mb-1">بحث</label>
+              <div class="input-group">
+                <span class="input-group-text"><i class="bi bi-search"></i></span>
+                <input type="text" id="evaluationsSearchInput" class="form-control" placeholder="اسم، جواز، وكيل" />
+              </div>
+            </div>
+            <div class="col-md-2">
+              <label class="form-label small mb-1">الجنسية</label>
+              <select id="evaluationsFilterNationality" class="form-select"><option value="">الكل</option></select>
+            </div>
+            <div class="col-md-2">
+              <label class="form-label small mb-1">اسم الوكيل</label>
+              <select id="evaluationsFilterAgent" class="form-select"><option value="">الكل</option></select>
+            </div>
+            <div class="col-md-2">
+              <label class="form-label small mb-1">نسبة الرضا العام</label>
+              <select id="evaluationsFilterOverall" class="form-select">
+                <option value="">الكل</option>
+                <option value="100%">100%</option>
+                <option value="75%">75%</option>
+                <option value="50%">50%</option>
+                <option value="25%">25%</option>
+              </select>
+            </div>
+            <div class="col-md-2">
+              <label class="form-label small mb-1">اللغة</label>
+              <select id="evaluationsFilterLanguage" class="form-select"><option value="">الكل</option></select>
+            </div>
+            <div class="col-md-1">
+              <button class="btn btn-outline-secondary w-100" id="evaluationsResetFiltersBtn" title="إعادة تعيين"><i class="bi bi-arrow-counterclockwise"></i></button>
+            </div>
+            <div class="col-md-2">
+              <label class="form-label small mb-1">من تاريخ</label>
+              <input type="date" id="evaluationsFilterDateFrom" class="form-control" />
+            </div>
+            <div class="col-md-2">
+              <label class="form-label small mb-1">إلى تاريخ</label>
+              <input type="date" id="evaluationsFilterDateTo" class="form-control" />
+            </div>
+          </div>
+        </div>
+
+        <div class="table-export-bar">
+          <button type="button" class="btn btn-outline-success btn-sm" id="evaluationsExportBtn">
+            <i class="bi bi-file-earmark-excel-fill"></i> تصدير Excel (حسب التصفية)
+          </button>
+        </div>
+        <div class="table-responsive chart-card">
+          <table class="table table-hover align-middle small text-nowrap text-center evaluations-table">
+            <thead>
+              <tr>
+                <th class="sticky-col">اسم المعتمر</th>
+                <th>رقم الجواز</th>
+                <th>اسم الوكيل الخارجي</th>
+                <th>الجنسية</th>
+                <th>رقم الهاتف</th>
+                <th>اللغة</th>
+                <th>نسبة الرضا العام</th>
+                <th>تاريخ التقييم</th>
+                <th>ملاحظات</th>
+                <th>إجراء</th>
+              </tr>
+            </thead>
+            <tbody id="evaluationsTableBody"></tbody>
+          </table>
+        </div>
+        <div class="d-flex justify-content-between align-items-center mt-2">
+          <span id="evaluationsPageInfo" class="text-muted small"></span>
+          <div class="btn-group">
+            <button class="btn btn-outline-secondary btn-sm" id="evaluationsPrevBtn">السابق</button>
+            <button class="btn btn-outline-secondary btn-sm" id="evaluationsNextBtn">التالي</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- 3. البلاغات والشكاوى -->
+      <section id="section-complaints" class="page-section">
+        <div class="section-toolbar">
+          <h5><i class="bi bi-exclamation-triangle-fill text-danger"></i> البلاغات والشكاوى</h5>
+          <span class="live-indicator"><span class="live-dot"></span> تحديث لحظي</span>
+        </div>
+
+        <div class="chart-card">
+          <div class="row g-2 align-items-end">
+            <div class="col-md-3">
+              <label class="form-label small mb-1">بحث</label>
+              <div class="input-group">
+                <span class="input-group-text"><i class="bi bi-search"></i></span>
+                <input type="text" id="complaintsSearchInput" class="form-control" placeholder="اسم، جواز، رقم مرجع، جوال، وكيل" />
+              </div>
+            </div>
+            <div class="col-md-2">
+              <label class="form-label small mb-1">اسم الوكيل</label>
+              <select id="complaintsFilterAgent" class="form-select"><option value="">الكل</option></select>
+            </div>
+            <div class="col-md-2">
+              <label class="form-label small mb-1">نوع البلاغ</label>
+              <select id="complaintsFilterType" class="form-select"><option value="">الكل</option></select>
+            </div>
+            <div class="col-md-2">
+              <label class="form-label small mb-1">الحالة</label>
+              <select id="complaintsFilterStatus" class="form-select"><option value="">الكل</option></select>
+            </div>
+            <div class="col-md-2">
+              <label class="form-label small mb-1">الجنسية</label>
+              <select id="complaintsFilterNationality" class="form-select"><option value="">الكل</option></select>
+            </div>
+            <div class="col-md-1">
+              <button class="btn btn-outline-secondary w-100" id="complaintsResetFiltersBtn" title="إعادة تعيين"><i class="bi bi-arrow-counterclockwise"></i></button>
+            </div>
+            <div class="col-md-2">
+              <label class="form-label small mb-1">من تاريخ</label>
+              <input type="date" id="complaintsFilterDateFrom" class="form-control" />
+            </div>
+            <div class="col-md-2">
+              <label class="form-label small mb-1">إلى تاريخ</label>
+              <input type="date" id="complaintsFilterDateTo" class="form-control" />
+            </div>
+          </div>
+        </div>
+
+        <div class="table-export-bar">
+          <button type="button" class="btn btn-outline-success btn-sm" id="complaintsExportBtn">
+            <i class="bi bi-file-earmark-excel-fill"></i> تصدير Excel (حسب التصفية)
+          </button>
+        </div>
+        <div class="table-responsive chart-card">
+          <table class="table table-hover align-middle small text-nowrap text-center complaints-table">
+            <thead>
+              <tr>
+                <th class="sticky-col">اسم المعتمر</th>
+                <th>رقم المرجع</th>
+                <th>رقم الجواز</th>
+                <th>رقم الهاتف</th>
+                <th>اسم الوكيل الخارجي</th>
+                <th>نوع البلاغ</th>
+                <th>المحتوى</th>
+                <th>الحالة</th>
+                <th>تاريخ البلاغ</th>
+                <th>تاريخ الاستلام</th>
+                <th>الموظف المستلم</th>
+                <th>تاريخ الإغلاق</th>
+                <th>إجراء</th>
+              </tr>
+            </thead>
+            <tbody id="complaintsTableBody"></tbody>
+          </table>
+        </div>
+        <div class="d-flex justify-content-between align-items-center mt-2">
+          <span id="complaintsPageInfo" class="text-muted small"></span>
+          <div class="btn-group">
+            <button class="btn btn-outline-secondary btn-sm" id="complaintsPrevBtn">السابق</button>
+            <button class="btn btn-outline-secondary btn-sm" id="complaintsNextBtn">التالي</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- 4. التقارير والإحصائيات -->
+      <section id="section-reports" class="page-section">
+        <div id="reportsError" class="alert alert-danger d-none"></div>
+        <div class="section-toolbar">
+          <h5><i class="bi bi-bar-chart-line-fill text-primary"></i> التقارير والإحصائيات</h5>
+          <button class="btn btn-danger" id="exportPdfBtn"><i class="bi bi-file-earmark-pdf-fill"></i> تصدير تقرير PDF</button>
+        </div>
+
+        <!-- فترة التقرير: كل الفترات / يوم / شهر / موسم (رمضان أو موسم العمرة بالتقويم الهجري) -->
+        <div class="chart-card">
+          <div class="row g-2 align-items-end">
+            <div class="col-md-3">
+              <label class="form-label small mb-1">فترة التقرير</label>
+              <select id="reportPeriodType" class="form-select">
+                <option value="all">كل الفترات</option>
+                <option value="day">يوم محدد</option>
+                <option value="month">شهر محدد</option>
+                <option value="season">موسم</option>
+              </select>
+            </div>
+            <div class="col-md-3 d-none" id="reportDayWrap">
+              <label class="form-label small mb-1">اليوم</label>
+              <input type="date" id="reportDayInput" class="form-control" />
+            </div>
+            <div class="col-md-3 d-none" id="reportMonthWrap">
+              <label class="form-label small mb-1">الشهر</label>
+              <input type="month" id="reportMonthInput" class="form-control" />
+            </div>
+            <div class="col-md-4 d-none" id="reportSeasonWrap">
+              <label class="form-label small mb-1">الموسم</label>
+              <select id="reportSeasonSelect" class="form-select"></select>
+            </div>
+            <div class="col">
+              <div class="report-period-label" id="reportPeriodLabel"></div>
+            </div>
+          </div>
+        </div>
+
+        <div id="reportsPrintArea">
+          <div class="score-grid mb-4">
+            <div class="score-card score-card-hero">
+              <div class="score-card-label">نسبة الرضا العام</div>
+              <div class="score-card-value" id="scoreOverall">-</div>
+              <div class="score-card-hint" id="scoreResponsesCount">-</div>
+            </div>
+            <div class="score-card">
+              <div class="score-card-icon"><i class="bi bi-airplane-fill"></i></div>
+              <div class="score-card-label">رضا خدمة الطيران</div>
+              <div class="score-card-value" id="scoreFlight">-</div>
+              <div class="score-bar"><div class="score-bar-fill" id="scoreFlightBar"></div></div>
+            </div>
+            <div class="score-card">
+              <div class="score-card-icon"><i class="bi bi-bus-front-fill"></i></div>
+              <div class="score-card-label">رضا النقل والمواصلات</div>
+              <div class="score-card-value" id="scoreTransport">-</div>
+              <div class="score-bar"><div class="score-bar-fill" id="scoreTransportBar"></div></div>
+            </div>
+            <div class="score-card">
+              <div class="score-card-icon"><i class="bi bi-building-fill"></i></div>
+              <div class="score-card-label">رضا الفنادق</div>
+              <div class="score-card-value" id="scoreHotels">-</div>
+              <div class="score-bar"><div class="score-bar-fill" id="scoreHotelsBar"></div></div>
+            </div>
+            <div class="score-card">
+              <div class="score-card-icon"><i class="bi bi-person-badge-fill"></i></div>
+              <div class="score-card-label">رضا مناديب الشركة</div>
+              <div class="score-card-value" id="scoreAgents">-</div>
+              <div class="score-bar"><div class="score-bar-fill" id="scoreAgentsBar"></div></div>
+            </div>
+            <div class="score-card">
+              <div class="score-card-icon"><i class="bi bi-check-circle-fill"></i></div>
+              <div class="score-card-label">مطابقة الخدمات للوصف</div>
+              <div class="score-card-value" id="scoreServicesMatch">-</div>
+              <div class="score-bar"><div class="score-bar-fill" id="scoreServicesMatchBar"></div></div>
+            </div>
+          </div>
+
+          <div class="row g-3">
+            <div class="col-lg-6">
+              <div class="chart-card"><div class="chart-card-header"><i class="bi bi-airplane-fill"></i><h6>أداء خدمة الطيران</h6></div><div class="chart-canvas-wrap chart-canvas-wrap-sm"><canvas id="chartFlight"></canvas></div></div>
+            </div>
+            <div class="col-lg-6">
+              <div class="chart-card"><div class="chart-card-header"><i class="bi bi-bus-front-fill"></i><h6>أداء النقل والمواصلات</h6></div><div class="chart-canvas-wrap chart-canvas-wrap-sm"><canvas id="chartTransport"></canvas></div></div>
+            </div>
+            <div class="col-lg-6">
+              <div class="chart-card"><div class="chart-card-header"><i class="bi bi-building-fill"></i><h6>أداء فنادق مكة والمدينة</h6></div><div class="chart-canvas-wrap chart-canvas-wrap-sm"><canvas id="chartHotels"></canvas></div></div>
+            </div>
+            <div class="col-lg-6">
+              <div class="chart-card"><div class="chart-card-header"><i class="bi bi-check-circle-fill"></i><h6>مطابقة الخدمات للوصف</h6></div><div class="chart-canvas-wrap chart-canvas-wrap-sm"><canvas id="chartServicesMatch"></canvas></div></div>
+            </div>
+            <div class="col-lg-6">
+              <div class="chart-card"><div class="chart-card-header"><i class="bi bi-person-badge-fill"></i><h6>تقييم مناديب الشركة</h6></div><div class="chart-canvas-wrap chart-canvas-wrap-sm"><canvas id="chartAgents"></canvas></div></div>
+            </div>
+            <div class="col-lg-6">
+              <div class="chart-card"><div class="chart-card-header"><i class="bi bi-emoji-smile-fill"></i><h6>توزيع نسبة الرضا العام</h6></div><div class="chart-canvas-wrap chart-canvas-wrap-sm"><canvas id="chartOverall"></canvas></div></div>
+            </div>
+            <div class="col-lg-6">
+              <div class="chart-card"><div class="chart-card-header"><i class="bi bi-translate"></i><h6>اللغات الأكثر استخداماً</h6></div><div class="chart-canvas-wrap chart-canvas-wrap-sm"><canvas id="chartLanguageUsage"></canvas></div></div>
+            </div>
+            <div class="col-lg-6">
+              <div class="chart-card"><div class="chart-card-header"><i class="bi bi-camera-reels-fill"></i><h6>تصنيف وسائط البلاغات</h6></div><div class="chart-canvas-wrap chart-canvas-wrap-sm"><canvas id="chartComplaintsType"></canvas></div></div>
+            </div>
+            <div class="col-lg-6">
+              <div class="chart-card"><div class="chart-card-header"><i class="bi bi-list-check"></i><h6>حالة البلاغات</h6></div><div class="chart-canvas-wrap chart-canvas-wrap-sm"><canvas id="chartComplaintsStatus"></canvas></div></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- موظف بلا أي صلاحية صفحات -->
+      <section id="section-noaccess" class="page-section">
+        <div class="chart-card text-center py-5">
+          <i class="bi bi-shield-lock" style="font-size: 2.5rem; color: var(--muted);"></i>
+          <h5 class="mt-3">لم تُمنح لحسابك صلاحية أي صفحة بعد</h5>
+          <p class="text-muted mb-0">تواصل مع مدير النظام لتحديد صلاحياتك.</p>
+        </div>
+      </section>
+
+      <!-- 5. إدارة الموظفين -->
+      <section id="section-users" class="page-section">
+        <div class="section-toolbar">
+          <h5><i class="bi bi-person-badge-fill text-primary"></i> إدارة الموظفين</h5>
+        </div>
+
+        <ul class="nav nav-tabs staff-tabs mb-3" role="tablist">
+          <li class="nav-item" role="presentation">
+            <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#staffTabUsers" type="button" role="tab">
+              <i class="bi bi-people-fill"></i> الموظفون
+            </button>
+          </li>
+          <li class="nav-item" role="presentation">
+            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#staffTabRoles" type="button" role="tab">
+              <i class="bi bi-shield-lock-fill"></i> الأدوار والصلاحيات
+            </button>
+          </li>
+        </ul>
+
+        <div class="tab-content">
+          <!-- تبويب الموظفين: الإنشاء باختيار دور جاهز فقط -->
+          <div class="tab-pane fade show active" id="staffTabUsers" role="tabpanel">
+            <div class="chart-card">
+              <div class="chart-card-header"><i class="bi bi-person-plus-fill"></i><h6>إضافة موظف جديد</h6></div>
+              <form id="addUserForm" class="row g-2 align-items-end">
+                <div class="col-md-3">
+                  <label class="form-label small mb-1">اسم المستخدم (للدخول)</label>
+                  <input type="text" id="newUserUsername" class="form-control" required />
+                </div>
+                <div class="col-md-3">
+                  <label class="form-label small mb-1">الاسم الكامل</label>
+                  <input type="text" id="newUserFullName" class="form-control" required />
+                </div>
+                <div class="col-md-2">
+                  <label class="form-label small mb-1">كلمة المرور</label>
+                  <input type="password" id="newUserPassword" class="form-control" required minlength="4" />
+                </div>
+                <div class="col-md-2">
+                  <label class="form-label small mb-1">الدور</label>
+                  <select id="newUserRole" class="form-select" required></select>
+                </div>
+                <div class="col-md-2">
+                  <button type="submit" class="btn btn-primary w-100" id="addUserBtn"><i class="bi bi-plus-lg"></i> إضافة</button>
+                </div>
+              </form>
+              <div class="form-text" id="newUserRoleHint"></div>
+              <div id="addUserResult" class="mt-2"></div>
+            </div>
+
+            <div class="table-responsive chart-card">
+              <table class="table table-hover align-middle">
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>اسم المستخدم</th>
+                    <th>الاسم الكامل</th>
+                    <th>الدور</th>
+                    <th>الحالة</th>
+                    <th>تاريخ الإنشاء</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody id="usersTableBody"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- تبويب الأدوار: تعريف الدور وصلاحياته مرة واحدة -->
+          <div class="tab-pane fade" id="staffTabRoles" role="tabpanel">
+            <div class="chart-card">
+              <div class="chart-card-header"><i class="bi bi-shield-plus"></i><h6>إنشاء دور جديد</h6></div>
+              <form id="addRoleForm" class="row g-2 align-items-end">
+                <div class="col-md-9">
+                  <label class="form-label small mb-1">اسم الدور</label>
+                  <input type="text" id="newRoleName" class="form-control" placeholder="مثال: موظف متابعة البلاغات" required />
+                </div>
+                <div class="col-md-3">
+                  <button type="submit" class="btn btn-primary w-100" id="addRoleBtn"><i class="bi bi-plus-lg"></i> إنشاء الدور</button>
+                </div>
+                <div class="col-12">
+                  <label class="form-label small mb-1">الصفحات والعمليات المسموحة لهذا الدور</label>
+                  <div class="perm-grid" id="newRolePerms"></div>
+                </div>
+              </form>
+              <div id="addRoleResult" class="mt-2"></div>
+            </div>
+
+            <div class="table-responsive chart-card">
+              <table class="table table-hover align-middle">
+                <thead>
+                  <tr>
+                    <th>الدور</th>
+                    <th>الصلاحيات</th>
+                    <th>عدد الموظفين</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody id="rolesTableBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- Toasts -->
+  <div id="toastContainer"></div>
+
+  <!-- مستندات الطباعة (PDF): مخفية على الشاشة وتُملأ عند التصدير - انظر js/print.js -->
+  <div id="reportPrintDoc" class="print-doc"></div>
+  <div id="printArea" class="print-doc"></div>
+
+  <!-- Modal: تفاصيل تقييم المعتمر -->
+  <div class="modal fade" id="evaluationModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">
+            تفاصيل تقييم <span id="modalEvalPilgrimName"></span>
+            <small class="text-muted d-block font-monospace" id="modalEvalPassport" style="font-size: 0.8rem;"></small>
+          </h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div id="modalEvalItems"></div>
+
+          <div class="mt-3">
+            <div class="eval-item-label mb-2"><i class="bi bi-chat-left-text-fill text-primary"></i> الملاحظات والاقتراحات</div>
+            <div class="eval-notes-box" id="modalEvalNotes">-</div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إغلاق</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: تعديل دور -->
+  <div class="modal fade" id="roleModal" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">تعديل الدور</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <label class="form-label small mb-1">اسم الدور</label>
+          <input type="text" id="roleModalName" class="form-control mb-3" />
+          <label class="form-label small mb-1">الصلاحيات</label>
+          <div class="perm-grid perm-grid-single" id="roleModalPerms"></div>
+          <div class="form-text" id="roleModalHint"></div>
+          <div id="roleModalError" class="alert alert-danger mt-3 mb-0 d-none"></div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+          <button type="button" class="btn btn-primary" id="saveRoleBtn">حفظ</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: إدارة البلاغ -->
+  <div class="modal fade" id="complaintModal" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">إدارة البلاغ <span id="modalComplaintId"></span></h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <p><strong>رقم الجواز:</strong> <span id="modalComplaintPassport"></span></p>
+          <p>
+            <strong>رقم الهاتف:</strong>
+            <span id="modalComplaintPhone" class="font-monospace"></span>
+            <span id="modalComplaintChatBtn" class="ms-2"></span>
+          </p>
+          <p><strong>نوع البلاغ:</strong> <span id="modalComplaintType">غير محدد</span></p>
+          <p><strong>نوع المحتوى:</strong> <span id="modalComplaintContentType">وسائط</span></p>
+          <p><strong>المحتوى:</strong></p>
+          <p class="border rounded p-2 bg-light" id="modalComplaintContent"></p>
+
+          <div class="row small text-muted mb-3 g-2">
+            <div class="col-4">
+              <div>تاريخ الاستلام</div>
+              <strong id="modalReceivedAt" class="text-dark">-</strong>
+            </div>
+            <div class="col-4">
+              <div>الموظف المستلم</div>
+              <strong id="modalReceivedBy" class="text-dark">-</strong>
+            </div>
+            <div class="col-4">
+              <div>تاريخ الإغلاق</div>
+              <strong id="modalClosedAt" class="text-dark">-</strong>
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">حالة البلاغ</label>
+            <select class="form-select" id="modalComplaintStatus">
+              <option value="جديدة">جديدة</option>
+              <option value="قيد المعالجة">قيد المعالجة</option>
+              <option value="تم حلها">تم حلها</option>
+              <option value="لم يتم الحل">لم يتم الحل</option>
+            </select>
+            <div class="form-text" id="modalComplaintStatusHint"></div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">إضافة إجراء جديد (ماذا استلمت وماذا ستفعل؟)</label>
+            <textarea class="form-control" id="modalComplaintAction" rows="3" placeholder="يُضاف للسجل أدناه ولا يمسح الإجراءات السابقة"></textarea>
+            <div class="form-text" id="modalComplaintActionHint"></div>
+          </div>
+
+          <div>
+            <div class="form-label mb-2"><i class="bi bi-clock-history"></i> سجل الإجراءات</div>
+            <ul class="complaint-log" id="modalComplaintLog"></ul>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+          <button type="button" class="btn btn-primary" id="saveComplaintBtn">حفظ</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+
+  <script src="js/config.js?v=7"></script>
+  <script src="js/api.js?v=7"></script>
+  <script src="js/overview.js?v=5"></script>
+  <script src="js/print.js?v=1"></script>
+  <script src="js/pilgrims.js?v=8"></script>
+  <script src="js/evaluations.js?v=8"></script>
+  <script src="js/complaints.js?v=13"></script>
+  <script src="js/reports.js?v=9"></script>
+  <script src="js/users.js?v=9"></script>
+  <script src="js/live.js?v=3"></script>
+  <script src="js/notifications.js?v=2"></script>
+  <script src="js/whatsapp_status.js?v=1"></script>
+
+  <script>
+    document.querySelectorAll("#mainNav .nav-link").forEach((link) => {
+      link.addEventListener("click", (e) => {
+        e.preventDefault();
+        document.querySelectorAll("#mainNav .nav-link").forEach((l) => l.classList.remove("active"));
+        document.querySelectorAll(".page-section").forEach((s) => s.classList.remove("active"));
+        link.classList.add("active");
+        document.getElementById(link.dataset.target).classList.add("active");
+        const titleEl = document.getElementById("pageTitle");
+        if (titleEl && link.dataset.title) titleEl.textContent = link.dataset.title;
+      });
+    });
+
+    document.getElementById("logoutBtn").addEventListener("click", async () => {
+      try {
+        await apiPost("/api/auth/logout");
+      } catch (_) {
+        /* ignore */
+      } finally {
+        window.location.href = "login.html";
+      }
+    });
+
+    const topbarDateEl = document.getElementById("topbarDate");
+    if (topbarDateEl) {
+      topbarDateEl.textContent = new Date().toLocaleDateString("ar-SA", {
+        weekday: "long",
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      });
+    }
+
+    async function loadCurrentUser() {
+      try {
+        const me = await apiGet("/api/auth/me");
+        document.getElementById("sidebarUserName").textContent = me.full_name;
+        document.getElementById("sidebarUserAvatar").textContent = me.full_name.trim().charAt(0);
+        const roleEl = document.getElementById("sidebarUserRole");
+        if (roleEl) roleEl.textContent = me.is_admin ? "مدير النظام" : "موظف لوحة التحكم";
+        return me;
+      } catch (_) {
+        /* apiFetch يعيد التوجيه لتسجيل الدخول تلقائياً عند 401 */
+        return null;
+      }
+    }
+
+    // كل صفحة وصلاحيتها ودالة تهيئتها؛ "admin" = إدارة الموظفين (للمدير فقط)
+    const SECTION_INITS = {
+      "section-overview": () => initOverview(),
+      "section-pilgrims": () => initPilgrims(),
+      "section-evaluations": () => initEvaluations(),
+      "section-complaints": () => initComplaints(),
+      "section-reports": () => initReports(),
+      "section-users": () => initUsers(),
+    };
+
+    function _canSeeSection(link) {
+      const perm = link.dataset.perm;
+      return perm === "admin" ? CURRENT_USER.is_admin : hasPerm(perm);
+    }
+
+    loadCurrentUser().then((me) => {
+      if (!me) return;
+      CURRENT_USER = me;
+
+      // إخفاء الصفحات غير المسموحة وتهيئة المسموحة فقط (فلا تُطلب بيانات سترفضها الخادم)
+      const allowedLinks = [];
+      document.querySelectorAll("#mainNav .nav-link").forEach((link) => {
+        if (_canSeeSection(link)) {
+          allowedLinks.push(link);
+          SECTION_INITS[link.dataset.target]();
+        } else {
+          link.closest(".nav-item").classList.add("d-none");
+          document.getElementById(link.dataset.target).classList.remove("active");
+        }
+      });
+
+      if (allowedLinks.length) {
+        allowedLinks[0].click();
+      } else {
+        document.querySelectorAll("#mainNav .nav-link").forEach((l) => l.classList.remove("active"));
+        document.getElementById("section-noaccess").classList.add("active");
+        document.getElementById("pageTitle").textContent = "لا توجد صلاحيات";
+      }
+
+      initNotifications();
+      initLiveNotifications();
+      initWhatsappStatus();
+    });
+  </script>
+</body>
+</html>
